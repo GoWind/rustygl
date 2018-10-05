@@ -40,48 +40,44 @@ fn main() {
 
     // set up vertex buffer object
 
-    let vertices: Vec<f32> = vec![
-        0.5, 0.5, 0.0, 1.0, 0.0, 0.0,
-        0.5, -0.5, 0.0, 0.0, 1.0, 0.0,
-        -0.5, -0.5, 0.0, 0.0, 0.6, 1.0,
-        -0.5, 0.5, 0.0, 1.0, 0.0, 0.0
-    ];
-
     let vertices2: Vec<f32> = vec![
         0.5, 0.5, 0.0, 1.0, 0.0, 0.0,
         0.5, -0.5, 0.0, 1.0, 1.0, 0.0,
         -0.5, -0.5, 0.0, 1.0, 0.0, 0.6,
     ];
 
-    let indices: Vec<u32> = vec![0,1,2,2,3,0];
+    let texCoords: Vec<f32> = vec![
+    0.0, 0.0,
+    1.0, 0.0,
+    0.5, 1.0];
 
-    let mut vbo: gl::types::GLuint = 0;
-    let mut ebo: gl::types::GLuint = 0;
+
+    //texture parameters for openGL
+    unsafe {
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+    }
+
+    let borderColors: Vec<f32> = vec![1.0, 1.0, 1.0, 1.0];
+    unsafe {
+        gl::TexParameterfv(gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, borderColors.as_ptr());
+    }
+
+
     let mut vbo2: gl::types::GLuint = 0;
 
-    unsafe {
-        gl::GenBuffers(1, &mut vbo);
-    }
-
-    unsafe {
-        gl::GenBuffers(1, &mut ebo);
-    }
-
-    unsafe {
-        gl::GenBuffers(1, &mut vbo2);
-    }
 
 
-    // set up vertex array object
 
-    let mut vao: gl::types::GLuint = 0;
     let mut vao2: gl::types::GLuint = 0;
-    unsafe {
-        gl::GenVertexArrays(1, &mut vao);
-    }
+    let mut tex0: gl::types::GLuint = 0;
 
     unsafe {
         gl::GenVertexArrays(1, &mut vao2);
+        gl::GenBuffers(1, &mut vbo2);
+        gl::GenTextures(1, &mut tex0);
     }
 
 
@@ -93,46 +89,6 @@ fn main() {
     }
 
     unsafe {
-
-        //setup vao 1 and vbo1
-        gl::BindVertexArray(vao);
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::BufferData(
-            gl::ARRAY_BUFFER, // target
-            (vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr, // size of data in bytes
-            vertices.as_ptr() as *const gl::types::GLvoid, // pointer to data
-            gl::STATIC_DRAW, // usage
-        );
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-        gl::BufferData(
-            gl::ELEMENT_ARRAY_BUFFER,
-            (indices.len() *std::mem::size_of::<u32>()) as gl::types::GLsizeiptr,
-            indices.as_ptr() as *const gl::types::GLvoid,
-            gl::STATIC_DRAW
-        );
-        gl::EnableVertexAttribArray(0); // this is "layout (location = 0)" in vertex shader
-        gl::VertexAttribPointer(
-            0, // index of the generic vertex attribute ("layout (location = 0)")
-            3, // the number of components per generic vertex attribute
-            gl::FLOAT, // data type
-            gl::FALSE, // normalized (int-to-float conversion)
-            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
-            std::ptr::null() // offset of the first component
-        );
-        gl::EnableVertexAttribArray(1);
-        gl::VertexAttribPointer(
-            1,
-            3,
-            gl::FLOAT,
-            gl::FALSE,
-            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
-            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid
-        );
-
-        // unbind vao and vbo before setting up vao2 and vbo2
-
-        //gl::BindVertexArray(vao);
-        //gl::BindBuffer(gl::ARRAY_BUFFER, 0);
 
         //bind vao2 and vbo2
         gl::BindVertexArray(vao2);
@@ -162,16 +118,19 @@ fn main() {
             (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid
         );
 
-        //unbind vao2 and vb02
-        gl::BindVertexArray(0);
-        gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+        // bind texture before doing ops on it
+        gl::BindTexture(gl::TEXTURE_2D, tex0);
 
 
 
 
     }
 
-    let mut id = 0;
+    let image = render_gl::load_image(&String::from("wall.jpg")).unwrap();
+    let img_bytes = &image.0[..];
+    let width = image.1;
+    let height = image.2;
+
     let sleep_duration = std::time::Duration::from_millis(400);
     let mut event_pump = sdl.event_pump().unwrap();
     'main: loop {
@@ -189,29 +148,13 @@ fn main() {
 
 
         shader_program.set_used();
-        id = (id + 1) % 2;
-        println!("id is {}", id);
         unsafe {
-            if id == 1 {
-                gl::BindVertexArray(vao);
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-                /*            gl::DrawArrays(
-                gl::TRIANGLES, // mode
-                0, // starting index in the enabled arrays
-                3 // number of indices to be rendered
-            );
-            */
-                gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
-                std::thread::sleep(sleep_duration);
-            } else {
-                println!("drawing triangle");
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
                 gl::BindVertexArray(vao2);
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
+                gl::BindBuffer(gl::ARRAY_BUFFER, vbo2);
                 gl::DrawArrays(gl::TRIANGLES, 0, 3);
                 std::thread::sleep(sleep_duration);
 
-            }
         }
 
         window.gl_swap_window();

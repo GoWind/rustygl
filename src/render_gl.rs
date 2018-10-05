@@ -3,6 +3,7 @@ use std::ptr;
 use std::ffi::{CStr, CString};
 
 use gl::types::*;
+extern crate image;
 
 pub struct Shader {
 id: gl::types::GLuint
@@ -136,6 +137,14 @@ impl Drop for Program {
             gl::DeleteProgram(self.id);
         }
     }
+}
+
+pub fn load_image(filename: &String) -> Result<(Vec<u8>, u32, u32), String> {
+
+    let img = image::open(filename).unwrap();
+    let data  = img.as_rgb8().unwrap();
+    Ok((data.clone().into_raw(), data.width(), data.height()))
+
 }
 
 
