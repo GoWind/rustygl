@@ -40,43 +40,29 @@ fn main() {
 
     // set up vertex buffer object
 
+    //vec3 pos vec3 colors vec2 texture coords
     let vertices2: Vec<f32> = vec![
-        0.5, 0.5, 0.0, 1.0, 0.0, 0.0,
-        0.5, -0.5, 0.0, 1.0, 1.0, 0.0,
-        -0.5, -0.5, 0.0, 1.0, 0.0, 0.6,
+         0.5,  0.5,  0.0,  1.0, 0.0, 0.0, 1.0, 1.0,
+         0.5, -0.5,  0.0,  0.0, 1.0, 0.0, 1.0, 0.0,
+        -0.5, -0.5,  0.0,  0.0, 0.0, 1.0, 0.0, 0.0,
+        -0.5,  0.5,  0.0,  1.0, 1.0, 1.0, 0.0, 1.0
     ];
 
-    let texCoords: Vec<f32> = vec![
-    0.0, 0.0,
-    1.0, 0.0,
-    0.5, 1.0];
+    let indices: Vec<u32> = vec![0, 1, 3,
+                                 1, 2, 3];
 
 
-    //texture parameters for openGL
-    unsafe {
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-    }
-
-    let borderColors: Vec<f32> = vec![1.0, 1.0, 1.0, 1.0];
-    unsafe {
-        gl::TexParameterfv(gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, borderColors.as_ptr());
-    }
 
 
     let mut vbo2: gl::types::GLuint = 0;
-
-
-
-
     let mut vao2: gl::types::GLuint = 0;
     let mut tex0: gl::types::GLuint = 0;
+    let mut ebo:  gl::types::GLuint = 0;
 
     unsafe {
         gl::GenVertexArrays(1, &mut vao2);
         gl::GenBuffers(1, &mut vbo2);
+        gl::GenBuffers(1, &mut ebo);
         gl::GenTextures(1, &mut tex0);
     }
 
@@ -85,12 +71,19 @@ fn main() {
 
     unsafe {
         gl::Viewport(0, 0, 900, 700);
-        gl::ClearColor(0.0, 0.0, 0.0, 0.4);
+        gl::ClearColor(0.2, 0.4, 1.0, 0.4);
     }
 
     unsafe {
 
-        //bind vao2 and vbo2
+        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+        gl::BufferData(
+            gl::ELEMENT_ARRAY_BUFFER,
+            (indices.len() * std::mem::size_of::<u32>()) as gl::types::GLsizeiptr,
+            indices.as_ptr() as *const gl::types::GLvoid,
+            gl::STATIC_DRAW
+        );
+
         gl::BindVertexArray(vao2);
         gl::BindBuffer(gl::ARRAY_BUFFER, vbo2);
         gl::BufferData(
@@ -105,7 +98,7 @@ fn main() {
             3, // the number of components per generic vertex attribute
             gl::FLOAT, // data type
             gl::FALSE, // normalized (int-to-float conversion)
-            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+            (8 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
             std::ptr::null() // offset of the first component
         );
         gl::EnableVertexAttribArray(1);
@@ -114,14 +107,18 @@ fn main() {
             3,
             gl::FLOAT,
             gl::FALSE,
-            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+            (8 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
             (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid
         );
-
-        // bind texture before doing ops on it
-        gl::BindTexture(gl::TEXTURE_2D, tex0);
-
-
+        gl::EnableVertexAttribArray(2);
+        gl::VertexAttribPointer(
+            2,
+            2,
+            gl::FLOAT,
+            gl::FALSE,
+            (8 * std::mem::size_of::<f32>()) as gl::types::GLint,
+            (6 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid
+        );
 
 
     }
@@ -131,7 +128,21 @@ fn main() {
     let width = image.1;
     let height = image.2;
 
-    let sleep_duration = std::time::Duration::from_millis(400);
+    let border_colors: Vec<f32> = vec![1.0, 1.0, 1.0, 1.0];
+    unsafe {
+        gl::TexParameterfv(gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, border_colors.as_ptr());
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_BASE_LEVEL, 0);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAX_LEVEL, 0);
+        gl::BindTexture(gl::TEXTURE_2D, tex0);
+        gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB8 as gl::types::GLint, width as i32, height as i32, 0, gl::RGB, gl::UNSIGNED_BYTE, img_bytes.as_ptr() as *const gl::types::GLvoid);
+        gl::GenerateMipmap(gl::TEXTURE_2D); // this generates only base mipmap
+        // for generating sub maps , call teximage2d with arg 2 = i for each level i and then call generateMipmap
+    }
+
     let mut event_pump = sdl.event_pump().unwrap();
     'main: loop {
         for event in event_pump.poll_iter() {
@@ -143,6 +154,7 @@ fn main() {
 
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl::BindBuffer(gl::TEXTURE_2D, tex0);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
 
@@ -150,10 +162,10 @@ fn main() {
         shader_program.set_used();
         unsafe {
                 gl::BindVertexArray(vao2);
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
-                gl::BindBuffer(gl::ARRAY_BUFFER, vbo2);
-                gl::DrawArrays(gl::TRIANGLES, 0, 3);
-                std::thread::sleep(sleep_duration);
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+                gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
+
+                gl::BindVertexArray(0);
 
         }
 
