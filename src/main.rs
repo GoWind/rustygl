@@ -57,6 +57,7 @@ fn main() {
     let mut vbo2: gl::types::GLuint = 0;
     let mut vao2: gl::types::GLuint = 0;
     let mut tex0: gl::types::GLuint = 0;
+    let mut tex1: gl::types::GLuint = 0;
     let mut ebo:  gl::types::GLuint = 0;
 
     unsafe {
@@ -64,6 +65,7 @@ fn main() {
         gl::GenBuffers(1, &mut vbo2);
         gl::GenBuffers(1, &mut ebo);
         gl::GenTextures(1, &mut tex0);
+        gl::GenTextures(1, &mut tex1);
     }
 
 
@@ -123,7 +125,11 @@ fn main() {
 
     }
 
-    let image = render_gl::load_image(&String::from("wall.jpg")).unwrap();
+    let smiley_image = render_gl::load_png_image(&String::from("smiley.png")).unwrap();
+    let smiley_bytes = &smiley_image.0[..];
+    let smiley_width = smiley_image.1;
+    let smiley_height  = smiley_image.2;
+    let image = render_gl::load_jpeg_image(&String::from("wall.jpg")).unwrap();
     let img_bytes = &image.0[..];
     let width = image.1;
     let height = image.2;
@@ -141,6 +147,9 @@ fn main() {
         gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB8 as gl::types::GLint, width as i32, height as i32, 0, gl::RGB, gl::UNSIGNED_BYTE, img_bytes.as_ptr() as *const gl::types::GLvoid);
         gl::GenerateMipmap(gl::TEXTURE_2D); // this generates only base mipmap
         // for generating sub maps , call teximage2d with arg 2 = i for each level i and then call generateMipmap
+        gl::BindTexture(gl::TEXTURE_2D, tex1);
+        gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA8 as gl::types::GLint, smiley_width as i32, smiley_height as i32, 0, gl::RGBA, gl::UNSIGNED_BYTE, smiley_bytes.as_ptr() as *const gl::types::GLvoid);
+        gl::GenerateMipmap(gl::TEXTURE_2D); // this generates only base mipmap
     }
 
     let mut event_pump = sdl.event_pump().unwrap();
@@ -156,6 +165,15 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT);
             gl::BindBuffer(gl::TEXTURE_2D, tex0);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
+        }
+
+        unsafe {
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, tex0);
+            gl::Uniform1i(gl::GetUniformLocation(shader_program.id(), "texture1".as_ptr() as *const gl::types::GLchar), 1);
+            gl::Uniform1i(gl::GetUniformLocation(shader_program.id(), "texture2".as_ptr() as *const gl::types::GLchar), 1);
+            gl::ActiveTexture(gl::TEXTURE1);
+            gl::BindTexture(gl::TEXTURE_2D, tex1);
         }
 
 

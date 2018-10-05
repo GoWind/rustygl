@@ -139,12 +139,16 @@ impl Drop for Program {
     }
 }
 
-pub fn load_image(filename: &String) -> Result<(Vec<u8>, u32, u32), String> {
+pub fn load_png_image(filename: &String) -> Result<(Vec<u8>, u32, u32), String> {
+    let mut img = image::open(filename).unwrap();
+    let data  = img.as_rgba8().unwrap();
+    Ok((data.clone().into_raw(), data.width(), data.height()))
+}
 
-    let img = image::open(filename).unwrap();
+pub fn load_jpeg_image(filename: &String) -> Result<(Vec<u8>, u32, u32), String> {
+    let mut img = image::open(filename).unwrap();
     let data  = img.as_rgb8().unwrap();
     Ok((data.clone().into_raw(), data.width(), data.height()))
-
 }
 
 
