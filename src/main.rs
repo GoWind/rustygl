@@ -1,6 +1,9 @@
 
 extern crate sdl2;
 extern crate gl;
+extern crate nalgebra_glm as glm;
+
+use glm::*;
 
 pub mod render_gl;
 use std::ptr;
@@ -50,7 +53,6 @@ fn main() {
 
     let indices: Vec<u32> = vec![0, 1, 3,
                                  1, 2, 3];
-
 
 
 
@@ -153,6 +155,7 @@ fn main() {
     }
 
     let mut event_pump = sdl.event_pump().unwrap();
+    let mut degrees: f32 = 0.0;
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -167,11 +170,21 @@ fn main() {
             gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
 
+        let mut translation = Mat4::identity();
+        translation = scale(&translation, &make_vec3(&[0.5, 0.5, 0.0]));
+        let rot_angle = friggin_radians(degrees);
+        println!("degrees is {}", degrees);
+        translation = rotate(&translation, rot_angle, &make_vec3(&[0.0, 0.0, 1.0]));
+        translation = translate(&translation, &make_vec3(&[0.5, -0.5, 0.0]));
+        degrees = (degrees + (1 as f32)) % (360 as f32);
+
         unsafe {
             gl::ActiveTexture(gl::TEXTURE0);
             gl::BindTexture(gl::TEXTURE_2D, tex0);
             gl::Uniform1i(gl::GetUniformLocation(shader_program.id(), "texture1".as_ptr() as *const gl::types::GLchar), 1);
             gl::Uniform1i(gl::GetUniformLocation(shader_program.id(), "texture2".as_ptr() as *const gl::types::GLchar), 1);
+            gl::Uniform1i(gl::GetUniformLocation(shader_program.id(), "transform".as_ptr() as *const gl::types::GLchar), 1);
+            gl::UniformMatrix4fv(gl::GetUniformLocation(shader_program.id(), "transform".as_ptr() as *const gl::types::GLchar), 1, gl::FALSE, value_ptr(&translation).as_ptr() as *const f32);
             gl::ActiveTexture(gl::TEXTURE1);
             gl::BindTexture(gl::TEXTURE_2D, tex1);
         }
@@ -183,10 +196,16 @@ fn main() {
                 gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
                 gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
 
-                gl::BindVertexArray(0);
-
         }
 
         window.gl_swap_window();
     }
+}
+// I can't belive there isn't a friggin easy fun to do this stupid
+// multiplication. Screw pompous, ritualistic libraries full of
+// shitty types
+fn friggin_radians(degrees: f32) -> f32 {
+   let base: f32 = pi::<f32>()  / (180 as f32);
+    return base * degrees;
+
 }
