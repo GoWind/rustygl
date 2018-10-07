@@ -42,6 +42,9 @@ fn main() {
     ).unwrap();
 
     // set up vertex buffer object
+    unsafe {
+      gl::Enable(gl::DEBUG_OUTPUT);
+    }
 
     //vec3 pos vec3 colors vec2 texture coords
     let vertices2: Vec<f32> = vec![
@@ -128,14 +131,14 @@ fn main() {
     }
 
     let smiley_image = render_gl::load_png_image(&String::from("smiley.png")).unwrap();
-    let smiley_bytes = &smiley_image.0[..];
+    let smiley_bytes  = &smiley_image.0[..];
     let smiley_width = smiley_image.1;
     let smiley_height  = smiley_image.2;
     let image = render_gl::load_jpeg_image(&String::from("wall.jpg")).unwrap();
     let img_bytes = &image.0[..];
     let width = image.1;
     let height = image.2;
-
+    println!("smiley bytes is {:?}", smiley_bytes.len());
     let border_colors: Vec<f32> = vec![1.0, 1.0, 1.0, 1.0];
     unsafe {
         gl::TexParameterfv(gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, border_colors.as_ptr());
@@ -173,7 +176,6 @@ fn main() {
         let mut translation = Mat4::identity();
         translation = scale(&translation, &make_vec3(&[0.5, 0.5, 0.0]));
         let rot_angle = friggin_radians(degrees);
-        println!("degrees is {}", degrees);
         translation = rotate(&translation, rot_angle, &make_vec3(&[0.0, 0.0, 1.0]));
         translation = translate(&translation, &make_vec3(&[0.5, -0.5, 0.0]));
         degrees = (degrees + (1 as f32)) % (360 as f32);
@@ -195,7 +197,7 @@ fn main() {
                 gl::BindVertexArray(vao2);
                 gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
                 gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
-
+                gl::BindVertexArray(0);
         }
 
         window.gl_swap_window();
