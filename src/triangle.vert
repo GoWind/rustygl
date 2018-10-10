@@ -1,16 +1,16 @@
 #version 330 core
 layout (location = 0) in vec3 Position;
-layout (location = 1) in vec3 aColor;
 layout (location = 2) in vec2 aCoords;
 
-uniform mat4 transform;
+uniform vec4 c;
+uniform mat4 model;
 
-out vec3 ourColor;
 out vec2 texCoords;
+out vec4 ourColor;
 
 void main()
 {
-    gl_Position = transform * vec4(Position, 1.0);
-    ourColor = aColor;
-   texCoords = aCoords;
+    gl_Position = model * vec4(Position, 1.0);
+    texCoords = aCoords;
+    ourColor = c;
 }

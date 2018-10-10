@@ -15,9 +15,10 @@ fn main() {
     let gl_attr = video_subsystem.gl_attr();
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
     gl_attr.set_context_version(3, 3);
+    gl_attr.set_context_flags().debug().set();
 
     let window = video_subsystem
-        .window("Game", 900, 700)
+        .window("Game", 800, 600)
         .opengl()
         .resizable()
         .build()
@@ -48,10 +49,10 @@ fn main() {
 
     //vec3 pos vec3 colors vec2 texture coords
     let vertices2: Vec<f32> = vec![
-         0.5,  0.5,  0.0,  1.0, 0.0, 0.0, 1.0, 1.0,
-         0.5, -0.5,  0.0,  0.0, 1.0, 0.0, 1.0, 0.0,
-        -0.5, -0.5,  0.0,  0.0, 0.0, 1.0, 0.0, 0.0,
-        -0.5,  0.5,  0.0,  1.0, 1.0, 1.0, 0.0, 1.0
+         0.5,  0.5,  0.0,  1.0, 1.0,
+         0.5, -0.5,  0.0,  1.0, 0.0,
+        -0.5, -0.5,  0.0,  0.0, 0.0,
+        -0.5,  0.5,  0.0,  0.0, 1.0
     ];
 
     let indices: Vec<u32> = vec![0, 1, 3,
@@ -61,23 +62,19 @@ fn main() {
 
     let mut vbo2: gl::types::GLuint = 0;
     let mut vao2: gl::types::GLuint = 0;
-    let mut tex0: gl::types::GLuint = 0;
-    let mut tex1: gl::types::GLuint = 0;
     let mut ebo:  gl::types::GLuint = 0;
 
     unsafe {
         gl::GenVertexArrays(1, &mut vao2);
         gl::GenBuffers(1, &mut vbo2);
         gl::GenBuffers(1, &mut ebo);
-        gl::GenTextures(1, &mut tex0);
-        gl::GenTextures(1, &mut tex1);
     }
 
 
     // set up shared state for window
 
     unsafe {
-        gl::Viewport(0, 0, 900, 700);
+        gl::Viewport(0, 0, 800, 600);
         gl::ClearColor(0.2, 0.4, 1.0, 0.4);
     }
 
@@ -105,60 +102,37 @@ fn main() {
             3, // the number of components per generic vertex attribute
             gl::FLOAT, // data type
             gl::FALSE, // normalized (int-to-float conversion)
-            (8 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+            (5 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
             std::ptr::null() // offset of the first component
         );
         gl::EnableVertexAttribArray(1);
         gl::VertexAttribPointer(
             1,
-            3,
+            2,
             gl::FLOAT,
             gl::FALSE,
-            (8 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+            (5 * std::mem::size_of::<f32>()) as gl::types::GLint,
             (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid
         );
-        gl::EnableVertexAttribArray(2);
-        gl::VertexAttribPointer(
-            2,
-            2,
-            gl::FLOAT,
-            gl::FALSE,
-            (8 * std::mem::size_of::<f32>()) as gl::types::GLint,
-            (6 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid
-        );
 
 
     }
 
-    let smiley_image = render_gl::load_png_image(&String::from("smiley.png")).unwrap();
-    let smiley_bytes  = &smiley_image.0[..];
-    let smiley_width = smiley_image.1;
-    let smiley_height  = smiley_image.2;
-    let image = render_gl::load_jpeg_image(&String::from("wall.jpg")).unwrap();
-    let img_bytes = &image.0[..];
-    let width = image.1;
-    let height = image.2;
-    println!("smiley bytes is {:?}", smiley_bytes.len());
     let border_colors: Vec<f32> = vec![1.0, 1.0, 1.0, 1.0];
+
+    let mut view = Mat4::identity();
+    let mut projection = Mat4::identity();
+    let model = rotate(&Mat4::identity(), friggin_radians(-55.0), &make_vec3(&[1.0, 0.0, 0.0]));
+    let view  = translate(&Mat4::identity(), &make_vec3(&[0.0, 0.0, -3.0]));
+    projection = perspective(800.0/600.0 as f32, friggin_radians(45.0), 0.1, 100.0);
+    println!("projection matrix is {}", projection);
+    let t2 = projection * view * model;
+    let mut event_pump = sdl.event_pump().unwrap();
+
     unsafe {
-        gl::TexParameterfv(gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, border_colors.as_ptr());
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_BASE_LEVEL, 0);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAX_LEVEL, 0);
-        gl::BindTexture(gl::TEXTURE_2D, tex0);
-        gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB8 as gl::types::GLint, width as i32, height as i32, 0, gl::RGB, gl::UNSIGNED_BYTE, img_bytes.as_ptr() as *const gl::types::GLvoid);
-        gl::GenerateMipmap(gl::TEXTURE_2D); // this generates only base mipmap
-        // for generating sub maps , call teximage2d with arg 2 = i for each level i and then call generateMipmap
-        gl::BindTexture(gl::TEXTURE_2D, tex1);
-        gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA8 as gl::types::GLint, smiley_width as i32, smiley_height as i32, 0, gl::RGBA, gl::UNSIGNED_BYTE, smiley_bytes.as_ptr() as *const gl::types::GLvoid);
-        gl::GenerateMipmap(gl::TEXTURE_2D); // this generates only base mipmap
+        shader_program.set_used();
     }
 
-    let mut event_pump = sdl.event_pump().unwrap();
-    let mut degrees: f32 = 0.0;
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -169,30 +143,66 @@ fn main() {
 
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
-            gl::BindBuffer(gl::TEXTURE_2D, tex0);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
 
-        let mut translation = Mat4::identity();
-        translation = scale(&translation, &make_vec3(&[0.5, 0.5, 0.0]));
-        let rot_angle = friggin_radians(degrees);
-        translation = rotate(&translation, rot_angle, &make_vec3(&[0.0, 0.0, 1.0]));
-        translation = translate(&translation, &make_vec3(&[0.5, -0.5, 0.0]));
-        degrees = (degrees + (1 as f32)) % (360 as f32);
 
         unsafe {
-            gl::ActiveTexture(gl::TEXTURE0);
-            gl::BindTexture(gl::TEXTURE_2D, tex0);
-            gl::Uniform1i(gl::GetUniformLocation(shader_program.id(), "texture1".as_ptr() as *const gl::types::GLchar), 1);
-            gl::Uniform1i(gl::GetUniformLocation(shader_program.id(), "texture2".as_ptr() as *const gl::types::GLchar), 1);
-            gl::Uniform1i(gl::GetUniformLocation(shader_program.id(), "transform".as_ptr() as *const gl::types::GLchar), 1);
-            gl::UniformMatrix4fv(gl::GetUniformLocation(shader_program.id(), "transform".as_ptr() as *const gl::types::GLchar), 1, gl::FALSE, value_ptr(&translation).as_ptr() as *const f32);
-            gl::ActiveTexture(gl::TEXTURE1);
-            gl::BindTexture(gl::TEXTURE_2D, tex1);
+            let ident = Mat4::identity();
+            let c_string = CString::new("c").unwrap().as_bytes_with_nul().as_ptr();
+            let c_loc = gl::GetUniformLocation(shader_program.id(), c_string as *const i8);
+            let ck = make_vec4(&vec![1.0, 0.5, 0.5, 0.0]);
+            let mut count = 0;
+            let active = gl::GetProgramiv(shader_program.id(), gl::ACTIVE_UNIFORMS, &mut count);
+            let mut length = 0;
+            let mut size =0;
+            let mut k = 0 as u32;
+            let mut r = CString::new("gokkamokka").unwrap().as_bytes_with_nul().as_ptr();
+            let _ = gl::GetActiveUniform(shader_program.id(), 0 as u32, 20, &mut length, &mut size, &mut k, r as *mut i8);
+
+
+            /*
+            let mut pkr = CString::new("perspective").unwrap().as_bytes_with_nul().as_ptr();
+            let pers_string = std::ffi::CStr::from_ptr(pkr as *const i8);
+            let pers_loc = gl::GetUniformLocation(shader_program.id(), pkr as *const i8);
+            gl::UniformMatrix4fv(pers_loc, 1, gl::FALSE, projection.as_slice().as_ptr());
+            println!("pers_loc piece of shit {:?}", pers_loc);
+            */
+
+            /*
+            let mut vkr = CString::new("view").unwrap().as_bytes_with_nul().as_ptr();
+            let vkr_string = std::ffi::CStr::from_ptr(vkr as *const i8);
+            let vkr_loc = gl::GetUniformLocation(shader_program.id(), vkr as *const i8);
+            gl::UniformMatrix4fv(vkr_loc, 1, gl::FALSE, view.as_slice().as_ptr());
+            println!("vkr_loc piece of shit {:?}", vkr_loc);
+            */
+
+
+
+            /*
+            let mut r = CString::new("gokkamakkamakkamakka").unwrap().as_bytes_with_nul().as_ptr();
+            let _ = gl::GetActiveUniform(shader_program.id(), 1 as u32, 20, &mut length, &mut size, &mut k, r as *mut i8);
+            */
+
+            /*
+            println!("iden_loc piece of shit {:?}", iden_loc);
+            println!("{:?}, len is {}, {}, {}", std::ffi::CStr::from_ptr(r as *const i8), std::ffi::CStr::from_ptr(r as *const i8).to_bytes().len() , size, k);
+            */
+            let mut mkr = CString::new("model").unwrap();
+            let mkr_loc = gl::GetUniformLocation(shader_program.id(), mkr.as_ptr() as *const i8);
+            gl::UniformMatrix4fv(mkr_loc, 1, gl::FALSE, model.as_slice().as_ptr());
+            println!("mkr_loc piece of shit {:?}", mkr_loc);
+
+            let mut r = CString::new("c").unwrap();
+            //let c_string = std::ffi::CStr::from_ptr(r as *const i8);
+            let c_loc = gl::GetUniformLocation(shader_program.id(), r.as_ptr() as *const i8);
+            gl::Uniform4fv(c_loc, 1, value_ptr(&ck).as_ptr());
+            println!("c_loc piece of shit {:?}", c_loc);
+
         }
 
 
-        shader_program.set_used();
+
         unsafe {
                 gl::BindVertexArray(vao2);
                 gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
