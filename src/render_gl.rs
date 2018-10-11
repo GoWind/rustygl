@@ -1,6 +1,7 @@
 use gl;
 use std::ptr;
 use std::ffi::{CStr, CString};
+extern crate nalgebra_glm as glm;
 
 use gl::types::*;
 extern crate image;
@@ -124,14 +125,47 @@ impl Program {
         self.id
     }
 
+    pub fn set_uniform_mat4(&self, mat_name: &str, mat: &glm::Mat4) -> Option<i32> {
+        let mut mat_name = CString::new(mat_name).unwrap();
+        let mut mat_loc;
+        unsafe {
+            mat_loc = gl::GetUniformLocation(self.id(), mat_name.as_ptr() as *const i8);
+        }
+        if mat_loc == -1 {
+            None
+        } else {
+            unsafe {
+                gl::UniformMatrix4fv(mat_loc, 1, gl::FALSE, mat.as_slice().as_ptr());
+            }
+            Some(mat_loc)
+        }
+
+    }
+
+    pub fn set_uniform_vec4(&self, vec_name: &str, vec: &glm::Vec4) -> Option<i32> {
+
+        let mut vec_name = CString::new(vec_name).unwrap();
+        let mut vec_loc;
+        unsafe {
+            vec_loc = gl::GetUniformLocation(self.id(), vec_name.as_ptr() as *const i8);
+        }
+
+        if vec_loc == -1 {
+            None
+        } else {
+            unsafe {
+                gl::Uniform4fv(vec_loc, 1, glm::value_ptr(vec).as_ptr());
+                Some(vec_loc)
+            }
+        }
+    }
+
     pub fn set_used(&self) {
         unsafe {
             gl::UseProgram(self.id);
         }
     }
-}
-
-impl Drop for Program {
+} impl Drop for Program {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteProgram(self.id);
