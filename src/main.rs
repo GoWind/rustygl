@@ -11,6 +11,7 @@ use std::ptr;
 fn main() {
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
+    let mut timer = sdl.timer().unwrap();
 
     let gl_attr = video_subsystem.gl_attr();
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
@@ -47,16 +48,9 @@ fn main() {
       gl::Enable(gl::DEBUG_OUTPUT);
     }
 
-    //vec3 pos vec3 colors vec2 texture coords
-    let vertices2: Vec<f32> = vec![
-         0.5,  0.5,  0.0,  1.0, 1.0,
-         0.5, -0.5,  0.0,  1.0, 0.0,
-        -0.5, -0.5,  0.0,  0.0, 0.0,
-        -0.5,  0.5,  0.0,  0.0, 1.0
-    ];
 
-    let indices: Vec<u32> = vec![0, 1, 3,
-                                 1, 2, 3];
+
+    let vertices2 = render_gl::load_cube_vertices();
 
 
 
@@ -80,13 +74,6 @@ fn main() {
 
     unsafe {
 
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-        gl::BufferData(
-            gl::ELEMENT_ARRAY_BUFFER,
-            (indices.len() * std::mem::size_of::<u32>()) as gl::types::GLsizeiptr,
-            indices.as_ptr() as *const gl::types::GLvoid,
-            gl::STATIC_DRAW
-        );
 
         gl::BindVertexArray(vao2);
         gl::BindBuffer(gl::ARRAY_BUFFER, vbo2);
@@ -118,11 +105,13 @@ fn main() {
 
     }
 
-    let border_colors: Vec<f32> = vec![1.0, 1.0, 1.0, 1.0];
-
+    /*
+      Set up textures
+      */
+    let tex0 = render_gl::set_texture(&String::from("wall.jpg"));
     let mut view = Mat4::identity();
     let mut projection = Mat4::identity();
-    let model = rotate(&Mat4::identity(), to_radians(-55.0), &make_vec3(&[1.0, 0.0, 0.0]));
+    let mut model = rotate(&Mat4::identity(), to_radians(-55.0), &make_vec3(&[1.0, 0.0, 0.0]));
     let view  = translate(&Mat4::identity(), &make_vec3(&[0.0, 0.0, -3.0]));
     projection = perspective(800.0/600.0 as f32, to_radians(45.0), 0.1, 100.0);
     let mut event_pump = sdl.event_pump().unwrap();
@@ -142,26 +131,25 @@ fn main() {
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
+            gl::Enable(gl::DEPTH_TEST);
         }
 
 
-        unsafe {
-            let ck = glm::make_vec4(&[0.9, 0.5, 0.6, 0.5]);
-            shader_program.set_uniform_vec4("c", &ck).unwrap();
-            shader_program.set_uniform_mat4("model", &model).unwrap();
-            shader_program.set_uniform_mat4("view", &view).unwrap();
-            shader_program.set_uniform_mat4("perspective", &projection).unwrap();
-        }
+        model = rotate(&model, timer.ticks() as f32 * to_radians(45.0), &make_vec3(&[0.5, 1.0, 0.0]));
+        shader_program.set_uniform_mat4("model", &model).unwrap();
+        shader_program.set_uniform_mat4("view", &view).unwrap();
+        shader_program.set_uniform_mat4("perspective", &projection).unwrap();
 
 
         unsafe {
-                gl::BindVertexArray(vao2);
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-                gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
-                gl::BindVertexArray(0);
+            gl::BindVertexArray(vao2);
+            gl::BindTexture(gl::TEXTURE_2D, tex0);
+            gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            gl::BindVertexArray(0);
         }
 
         window.gl_swap_window();
+        std::thread::sleep(std::time::Duration::from_millis(50));
     }
 }
 fn to_radians(degrees: f32) -> f32 {
