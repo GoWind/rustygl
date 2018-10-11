@@ -101,9 +101,13 @@ fn main() {
             (5 * std::mem::size_of::<f32>()) as gl::types::GLint,
             (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid
         );
-
-
     }
+
+    let cubePos : Vec<Vec3> = vec![
+        make_vec3(&[0.0, 0.0, 0.0]),
+        make_vec3(&[2.0, 5.0, -15.0]),
+        make_vec3(&[-1.5, -2.2, -2.5]),
+    ];
 
     /*
       Set up textures
@@ -115,6 +119,7 @@ fn main() {
     let view  = translate(&Mat4::identity(), &make_vec3(&[0.0, 0.0, -3.0]));
     projection = perspective(800.0/600.0 as f32, to_radians(45.0), 0.1, 100.0);
     let mut event_pump = sdl.event_pump().unwrap();
+    println!("load image {}", render_gl::load_image(&String::from("smiley.png")));
 
     unsafe {
         shader_program.set_used();
@@ -135,8 +140,7 @@ fn main() {
         }
 
 
-        model = rotate(&model, timer.ticks() as f32 * to_radians(45.0), &make_vec3(&[0.5, 1.0, 0.0]));
-        shader_program.set_uniform_mat4("model", &model).unwrap();
+        model = rotate(&model, to_radians(45.0), &make_vec3(&[0.5, 1.0, 0.0]));
         shader_program.set_uniform_mat4("view", &view).unwrap();
         shader_program.set_uniform_mat4("perspective", &projection).unwrap();
 
@@ -144,12 +148,18 @@ fn main() {
         unsafe {
             gl::BindVertexArray(vao2);
             gl::BindTexture(gl::TEXTURE_2D, tex0);
-            gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            for i in 0..cubePos.len() {
+                let mut new_model  = Mat4::identity();
+                new_model = translate(&new_model, &cubePos[i]);
+                new_model = rotate(&new_model, timer.ticks() as f32 * to_radians(20.0), &make_vec3(&[1.0, 0.0, 0.0]));
+                shader_program.set_uniform_mat4("model", &new_model).unwrap();
+                gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            }
             gl::BindVertexArray(0);
         }
 
         window.gl_swap_window();
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
 fn to_radians(degrees: f32) -> f32 {

@@ -205,6 +205,15 @@ impl Drop for Program {
     }
 }
 
+pub fn load_image(filename: &String) -> String {
+    let k = image::open(filename).unwrap();
+    match k  {
+        image::DynamicImage::ImageRgb8(ref im) => { String::from("RBG")}
+        image::DynamicImage::ImageRgba8(ref im) => { String::from("RBGA")}
+        _ => { String::from("nothing")}
+    }
+}
+
 pub fn load_png_image(filename: &String) -> Result<(Vec<u8>, u32, u32), String> {
     let mut img = image::open(filename).unwrap();
     let data  = img.as_rgba8().unwrap();
