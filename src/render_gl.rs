@@ -291,5 +291,6 @@ pub fn set_texture(filename: &String) -> GLuint {
         gl::GenerateMipmap(gl::TEXTURE_2D);
     }
     k
+    
 
 }

@@ -116,7 +116,6 @@ fn main() {
     let mut view = Mat4::identity();
     let mut projection = Mat4::identity();
     let mut model = rotate(&Mat4::identity(), to_radians(-55.0), &make_vec3(&[1.0, 0.0, 0.0]));
-    let view  = translate(&Mat4::identity(), &make_vec3(&[0.0, 0.0, -3.0]));
     projection = perspective(800.0/600.0 as f32, to_radians(45.0), 0.1, 100.0);
     let mut event_pump = sdl.event_pump().unwrap();
     println!("load image {}", render_gl::load_image(&String::from("smiley.png")));
@@ -141,6 +140,12 @@ fn main() {
 
 
         model = rotate(&model, to_radians(45.0), &make_vec3(&[0.5, 1.0, 0.0]));
+        let radius = 10.0;
+        let camX = (to_radians(timer.ticks() as f32)).sin() * radius;
+        let camZ = (to_radians(timer.ticks() as f32)).cos() * radius;
+        view = look_at(&make_vec3(&[camX, 0.0, camZ]),
+                       &make_vec3(&[0.0, 0.0, 0.0]),
+                           &make_vec3(&[0.0, 1.0, 0.0]));
         shader_program.set_uniform_mat4("view", &view).unwrap();
         shader_program.set_uniform_mat4("perspective", &projection).unwrap();
 
@@ -159,7 +164,7 @@ fn main() {
         }
 
         window.gl_swap_window();
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(50));
     }
 }
 fn to_radians(degrees: f32) -> f32 {
