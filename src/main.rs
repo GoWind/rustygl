@@ -123,15 +123,60 @@ fn main() {
     unsafe {
         shader_program.set_used();
     }
-
+    let mut camera_pos = make_vec3(&[0.0, 0.0, 30.0]);
+    let mut camera_front = make_vec3(&[0.0, 0.0, -1.0]);
+    let mut camera_up = make_vec3(&[0.0, 1.0, 0.0]);
+    let mut camera_speed = 0.5;
+    let mut last_time: f32 = timer.ticks() as f32;
+    let mut yaw = 0.0;
+    let mut pitch = 0.0;
     'main: loop {
+        let current_time :f32 = timer.ticks() as f32;
+        let delta = current_time - last_time;
+        camera_speed = 0.5 * delta;
         for event in event_pump.poll_iter() {
             match event {
                 sdl2::event::Event::Quit {..} => break 'main,
+                sdl2::event::Event::MouseMotion{xrel: x_rel, yrel: y_rel,..} => {
+
+                    yaw += x_rel as f32 * 0.5;
+                    pitch += y_rel as f32 * 0.5;
+                    if yaw > 89.0 {
+                        yaw = 89.0;
+                    } else if yaw < -89.0 {
+                        yaw = -89.0
+                    }
+                    if pitch > 89.0 {
+                        pitch =  89.0;
+                    } else if pitch < -89.0 {
+                        pitch = -89.0;
+                    }
+                }
+                sdl2::event::Event::KeyDown{keycode: k, ..} => {
+                    let key_code = k.unwrap();
+
+                    match key_code {
+                        sdl2::keyboard::Keycode::W => { camera_pos += camera_speed * camera_front;}
+                        sdl2::keyboard::Keycode::S => { camera_pos -= camera_speed * camera_front;}
+                        sdl2::keyboard::Keycode::A => { camera_pos -=
+                            normalize(&camera_front.cross(&camera_up)) * camera_speed;}
+                        sdl2::keyboard::Keycode::D => { camera_pos +=
+                            normalize(&camera_front.cross(&camera_up)) * camera_speed;}
+                        _ => {}
+                    }
+                }
+
                 _ => {},
             }
         }
+        camera_front = make_vec3(&[
+            to_radians(pitch).cos() * to_radians(yaw).cos(),
+            (to_radians((pitch)).sin()),
+            (to_radians(pitch)).cos() * (to_radians(yaw)).sin()]);
 
+        view = look_at(&camera_pos,
+                       &(camera_pos + camera_front),
+                       &camera_up);
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
@@ -141,11 +186,6 @@ fn main() {
 
         model = rotate(&model, to_radians(45.0), &make_vec3(&[0.5, 1.0, 0.0]));
         let radius = 10.0;
-        let camX = (to_radians(timer.ticks() as f32)).sin() * radius;
-        let camZ = (to_radians(timer.ticks() as f32)).cos() * radius;
-        view = look_at(&make_vec3(&[camX, 0.0, camZ]),
-                       &make_vec3(&[0.0, 0.0, 0.0]),
-                           &make_vec3(&[0.0, 1.0, 0.0]));
         shader_program.set_uniform_mat4("view", &view).unwrap();
         shader_program.set_uniform_mat4("perspective", &projection).unwrap();
 
@@ -164,7 +204,7 @@ fn main() {
         }
 
         window.gl_swap_window();
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        last_time = current_time;
     }
 }
 fn to_radians(degrees: f32) -> f32 {

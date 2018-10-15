@@ -10,6 +10,16 @@ pub struct Shader {
 id: gl::types::GLuint
 }
 
+enum TextureType {
+    RGB,
+    RGBA,
+}
+pub struct Texture {
+    tex_id: GLuint,
+    unit_id: GLenum,
+    tex_type: TextureType,
+
+}
 
 impl Shader {
     fn from_source(source: & CStr, kind: gl::types::GLenum) -> Result < Shader, String > {
