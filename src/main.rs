@@ -39,7 +39,7 @@ fn main() {
         &CString::new(include_str!("triangle.frag")).unwrap()
     ).unwrap();
 
-    let shader_program = render_gl::Program::from_shaders(
+    let mut shader_program = render_gl::Program::from_shaders(
         &[vert_shader, frag_shader]
     ).unwrap();
 
@@ -103,7 +103,7 @@ fn main() {
         );
     }
 
-    let cubePos : Vec<Vec3> = vec![
+    let cube_pos : Vec<Vec3> = vec![
         make_vec3(&[0.0, 0.0, 0.0]),
         make_vec3(&[2.0, 5.0, -15.0]),
         make_vec3(&[-1.5, -2.2, -2.5]),
@@ -112,17 +112,15 @@ fn main() {
     /*
       Set up textures
       */
-    let tex0 = render_gl::set_texture(&String::from("wall.jpg"));
+    shader_program.program_load_texture(&String::from("texture1"), &String::from("wall.jpg"));
+    shader_program.program_load_texture(&String::from("texture2"), &String::from("smiley.png"));
     let mut view = Mat4::identity();
     let mut projection = Mat4::identity();
     let mut model = rotate(&Mat4::identity(), to_radians(-55.0), &make_vec3(&[1.0, 0.0, 0.0]));
     projection = perspective(800.0/600.0 as f32, to_radians(45.0), 0.1, 100.0);
     let mut event_pump = sdl.event_pump().unwrap();
-    println!("load image {}", render_gl::load_image(&String::from("smiley.png")));
 
-    unsafe {
-        shader_program.set_used();
-    }
+    shader_program.set_used();
     let mut camera_pos = make_vec3(&[0.0, 0.0, 30.0]);
     let mut camera_front = make_vec3(&[0.0, 0.0, -1.0]);
     let mut camera_up = make_vec3(&[0.0, 1.0, 0.0]);
@@ -130,17 +128,20 @@ fn main() {
     let mut last_time: f32 = timer.ticks() as f32;
     let mut yaw = 0.0;
     let mut pitch = 0.0;
+
+    shader_program.set_textures();
+    //render_gl::set_texture(&String::from("wall.jpg"));
     'main: loop {
         let current_time :f32 = timer.ticks() as f32;
         let delta = current_time - last_time;
-        camera_speed = 0.5 * delta;
+        camera_speed = 0.3 * delta;
         for event in event_pump.poll_iter() {
             match event {
                 sdl2::event::Event::Quit {..} => break 'main,
                 sdl2::event::Event::MouseMotion{xrel: x_rel, yrel: y_rel,..} => {
 
-                    yaw += x_rel as f32 * 0.5;
-                    pitch += y_rel as f32 * 0.5;
+                    yaw += x_rel as f32 * 0.05;
+                    pitch += y_rel as f32 * 0.05;
                     if yaw > 89.0 {
                         yaw = 89.0;
                     } else if yaw < -89.0 {
@@ -184,7 +185,6 @@ fn main() {
         }
 
 
-        model = rotate(&model, to_radians(45.0), &make_vec3(&[0.5, 1.0, 0.0]));
         let radius = 10.0;
         shader_program.set_uniform_mat4("view", &view).unwrap();
         shader_program.set_uniform_mat4("perspective", &projection).unwrap();
@@ -192,10 +192,9 @@ fn main() {
 
         unsafe {
             gl::BindVertexArray(vao2);
-            gl::BindTexture(gl::TEXTURE_2D, tex0);
-            for i in 0..cubePos.len() {
+            for i in 0..cube_pos.len() {
                 let mut new_model  = Mat4::identity();
-                new_model = translate(&new_model, &cubePos[i]);
+                new_model = translate(&new_model, &cube_pos[i]);
                 new_model = rotate(&new_model, timer.ticks() as f32 * to_radians(20.0), &make_vec3(&[1.0, 0.0, 0.0]));
                 shader_program.set_uniform_mat4("model", &new_model).unwrap();
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);

@@ -1,25 +1,21 @@
-use gl;
-use std::ptr;
-use std::ffi::{CStr, CString};
 extern crate nalgebra_glm as glm;
-
-use gl::types::*;
 extern crate image;
 
+use std::ptr;
+use std::ffi::{CStr, CString};
+use gl;
+use gl::types::*;
+
+pub mod texture;
+
+use render_gl::texture::Texture;
 pub struct Shader {
 id: gl::types::GLuint
 }
 
-enum TextureType {
-    RGB,
-    RGBA,
-}
-pub struct Texture {
-    tex_id: GLuint,
-    unit_id: GLenum,
-    tex_type: TextureType,
+#[derive(PartialEq, Eq)]
+enum ImageType { RGB, RGBA}
 
-}
 
 impl Shader {
     fn from_source(source: & CStr, kind: gl::types::GLenum) -> Result < Shader, String > {
@@ -92,6 +88,7 @@ fn create_cstring_with_len(len: usize) -> CString {
 
 pub struct Program {
     id: GLuint,
+    textures: Vec<Texture>
 }
 
 impl Program {
@@ -128,7 +125,7 @@ impl Program {
         for shader in shaders {
             unsafe {gl::DetachShader(program_id, shader.id());}
         }
-        Ok(Program {id: program_id})
+        Ok(Program {id: program_id, textures: Vec::new()})
     }
 
     pub fn id(&self) -> GLuint {
@@ -171,36 +168,62 @@ impl Program {
     }
 
     // right now, I am supporting only one texture. Need to figure out how to add multiple textures
-    pub fn set_texture(&self, image_path: &String) -> Option<u32> {
+    pub fn program_load_texture(&mut self, name: &String, image_path: &String) -> Option<u32> {
         let border_colors: Vec<f32> = vec![0.0, 1.0, 0.0, 1.0];
-
         let mut tex: u32 = 0;
-        unsafe {
-            gl::GenTextures(1,  &mut tex);
-            gl::BindTexture(gl::TEXTURE_2D, tex);
-            gl::TexParameterfv(gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, border_colors.as_ptr());
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);	// set texture wrapping to GL_REPEAT (default wrapping method)
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_BASE_LEVEL, 0);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAX_LEVEL, 0);
-        }
-        let (image_vec, width, height) = load_jpeg_image(image_path).unwrap();
-        let image_bytes:&[u8] = &image_vec[..];
-        unsafe {
-            gl::TexImage2D(gl::TEXTURE_2D,
-                           0,
-                           gl::RGB8 as gl::types::GLint,
-                           width as i32, height as i32,
-                           0,
-                           gl::RGB,
-                           gl::UNSIGNED_BYTE,
-                           image_bytes.as_ptr() as *const gl::types::GLvoid);
-            gl::GenerateMipmap(gl::TEXTURE_2D);
-        }
-        Some(tex)
+            unsafe {
+                gl::GenTextures(1, &mut tex);
+                gl::BindTexture(gl::TEXTURE_2D, tex);
+                gl::TexParameterfv(gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, border_colors.as_ptr());
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);    // set texture wrapping to GL_REPEAT (default wrapping method)
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_BASE_LEVEL, 0);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAX_LEVEL, 0);
+            }
+            let (image_type, image_data, width, height) = load_image(image_path).unwrap();
+            let image_bytes = &image_data[..];
+            let (pixel_type, channels) = if image_type == ImageType::RGB {
+                (gl::RGB8, gl::RGB)
+            }else {
+                    (gl::RGBA8, gl::RGBA)
+            };
+            unsafe {
+                gl::TexImage2D(gl::TEXTURE_2D,
+                               0,
+                               pixel_type as gl::types::GLint,
+                               width as i32,
+                               height as i32,
+                               0,
+                               channels,
+                               gl::UNSIGNED_BYTE,
+                               image_bytes.as_ptr() as *const gl::types::GLvoid);
+                gl::GenerateMipmap(gl::TEXTURE_2D);
+                gl::BindTexture(gl::TEXTURE_2D, 0);
+            }
+            self.textures.push(Texture::new(tex, name));
+            return Some(tex);
     }
+
+    pub fn set_textures(&self) {
+        for i in 0..self.textures.len() {
+            unsafe {
+                gl::ActiveTexture(gl::TEXTURE0 + i as u32);
+                let tex_id = self.textures[i].get_id();
+                let tex_name = self.textures[i].get_name();
+                gl::BindTexture(gl::TEXTURE_2D, tex_id);
+                let texture_location = gl::GetUniformLocation(
+                    self.id(),
+                    CString::new(tex_name.into_bytes()).unwrap().as_ptr());
+                gl::Uniform1i(texture_location, i as i32);
+            }
+
+        }
+    }
+
+
+
     pub fn set_used(&self) {
         unsafe {
             gl::UseProgram(self.id);
@@ -215,23 +238,31 @@ impl Drop for Program {
     }
 }
 
-pub fn load_image(filename: &String) -> String {
+fn load_image(filename: &String) -> Result<(ImageType, Vec<u8>, u32, u32), String> {
     let k = image::open(filename).unwrap();
     match k  {
-        image::DynamicImage::ImageRgb8(ref im) => { String::from("RBG")}
-        image::DynamicImage::ImageRgba8(ref im) => { String::from("RBGA")}
-        _ => { String::from("nothing")}
+        image::DynamicImage::ImageRgb8(ref im) => {
+            let data = k.as_rgb8().unwrap();
+            return Ok((ImageType::RGB, data.clone().into_raw(), data.width(), data.height()));
+        }
+        image::DynamicImage::ImageRgba8(ref im) => {
+            let data = k.as_rgba8().unwrap();
+            Ok((ImageType::RGBA, data.clone().into_raw(), data.width(), data.height()))
+        }
+        _ => {
+            Err(String::from(format ! ("unable to load image {}. Unsupported Type", filename)))
+        }
     }
 }
 
 pub fn load_png_image(filename: &String) -> Result<(Vec<u8>, u32, u32), String> {
-    let mut img = image::open(filename).unwrap();
+    let img = image::open(filename).unwrap();
     let data  = img.as_rgba8().unwrap();
     Ok((data.clone().into_raw(), data.width(), data.height()))
 }
 
 pub fn load_jpeg_image(filename: &String) -> Result<(Vec<u8>, u32, u32), String> {
-    let mut img = image::open(filename).unwrap();
+    let img = image::open(filename).unwrap();
     let data  = img.as_rgb8().unwrap();
     if data.len() == 0 {
         return Err(String::from(format!("{}: empty jpeg image",filename)))
