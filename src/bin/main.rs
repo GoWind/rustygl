@@ -2,10 +2,11 @@
 extern crate sdl2;
 extern crate gl;
 extern crate nalgebra_glm as glm;
+extern crate game;
 
 use glm::*;
+use game::render_gl;
 
-pub mod render_gl;
 use std::ptr;
 
 fn main() {
