@@ -167,6 +167,25 @@ impl Program {
         }
     }
 
+    pub fn set_uniform_vec3(&self, vec_name: &str, vec: &glm::Vec3) -> Option<i32> {
+
+        let mut vec_name = CString::new(vec_name).unwrap();
+        let mut vec_loc;
+        unsafe {
+            vec_loc = gl::GetUniformLocation(self.id(), vec_name.as_ptr() as *const i8);
+        }
+
+        if vec_loc == -1 {
+            None
+        } else {
+            unsafe {
+                gl::Uniform3fv(vec_loc, 1, glm::value_ptr(vec).as_ptr());
+                Some(vec_loc)
+            }
+        }
+    }
+
+
     // right now, I am supporting only one texture. Need to figure out how to add multiple textures
     pub fn program_load_texture(&mut self, name: &String, image_path: &String) -> Option<u32> {
         let border_colors: Vec<f32> = vec![0.0, 1.0, 0.0, 1.0];
