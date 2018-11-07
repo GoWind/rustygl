@@ -12,3 +12,8 @@ This project is basically my attempt at learning openGL and sharpening my Rust s
 ## Running the code
 
 `cargo build && cargo run` should ideall do the trick. I started writing this on a Macbook and haven't had an issue linking it against OpenGL library/drivers. Your mileage may vary. 
+
+### Caveat
+I am running into issue where sdl2 with the `bundled` and `static-link` features enabled in `Cargo.toml` doesn't work in Linux. When `bundled` is enabled, sdl2 downloads and compiles sdl2 from source and it seems there is some cmake setting that I might be missing.  
+
+To circumvent this, I manually installed `libsdl2-dev` on my Linux machine and removed the 2 above mentioned features from my Cargo.toml and it works fine. Any help debugging/reproducing this issue would be nice (a solution would be very much appreciated :))
