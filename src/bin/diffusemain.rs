@@ -155,11 +155,12 @@ fn main() {
     let mut view = Mat4::identity();
     let mut projection = Mat4::identity();
 	let mut model = Mat4::identity();
+	model = rotate(&model, to_radians(45.0), &make_vec3(&[0.0, 1.0, 0.0]));
     projection = perspective(800.0/600.0 as f32, to_radians(45.0), 0.1, 100.0);
     let mut event_pump = sdl.event_pump().unwrap();
 
     shader_program.set_used();
-	let mut camera_pos = make_vec3(&[0.0, 0.0, 3.0]);
+	let mut camera_pos = make_vec3(&[0.0, 1.0, 5.0]);
 	let mut camera_up =  make_vec3(&[0.0, 1.0, 0.0]);
 	let mut camera_front =  make_vec3(&[0.0, 0.0, 0.0]);
 	let camera_speed = 0.3;
@@ -196,7 +197,7 @@ fn main() {
         }
 
 
-		let lightPos = make_vec3(&[1.2, 1.0, 2.0]);
+		let lightPos = make_vec3(&[2.2, 1.0, 2.0]);
 		let lightColor = make_vec3(&[1.0, 1.0, 1.0]);
 		let objectColor = make_vec3(&[1.0, 0.5, 0.31]);
         shader_program.set_uniform_mat4("view", &view).unwrap();
@@ -206,6 +207,7 @@ fn main() {
 		shader_program.set_uniform_vec3("lightPos",&lightPos); 
 		shader_program.set_uniform_vec3("objectColor", &objectColor); 
 		shader_program.set_uniform_vec3("lightColor",&lightColor); 
+		shader_program.set_uniform_vec3("viewPos",&camera_pos); 
 
 
         unsafe {
