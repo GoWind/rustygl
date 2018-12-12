@@ -6,7 +6,7 @@ extern crate game;
 
 use glm::*;
 use game::render_gl;
-
+use game::render_gl::camera::*;
 use std::ptr;
 
 #[allow(unused_variables, non_snakecase)]
@@ -160,10 +160,12 @@ fn main() {
     let mut event_pump = sdl.event_pump().unwrap();
 
     shader_program.set_used();
-	let mut camera_pos = make_vec3(&[0.0, 3.0, 5.0]);
+	let mut camera_pos = make_vec3(&[0.0, 1.0, 5.0]);
 	let mut camera_up =  make_vec3(&[0.0, 1.0, 0.0]);
-	let mut camera_front =  make_vec3(&[0.0, 0.0, 0.0]);
+	let mut camera_front =  make_vec3(&[0.0, 0.0, -1.0]);
 	let camera_speed = 0.3;
+
+    let mut cam = Camera::new(&camera_pos, &camera_front, &camera_up, 0.3);
 
     shader_program.set_textures();
     'main: loop {
@@ -174,12 +176,18 @@ fn main() {
                     let key_code = k.unwrap();
 
                     match key_code {
-                        sdl2::keyboard::Keycode::W => { camera_pos += camera_speed * camera_front;}
-                        sdl2::keyboard::Keycode::S => { camera_pos -= camera_speed * camera_front;}
-                        sdl2::keyboard::Keycode::A => { camera_pos -=
-                            normalize(&camera_front.cross(&camera_up)) * camera_speed;}
-                        sdl2::keyboard::Keycode::D => { camera_pos +=
-                            normalize(&camera_front.cross(&camera_up)) * camera_speed;}
+                        sdl2::keyboard::Keycode::W => {
+                            cam.update_movement(CameraMovement::Front);
+                        }
+                        sdl2::keyboard::Keycode::S => {
+                            cam.update_movement(CameraMovement::Back);
+                        }
+                        sdl2::keyboard::Keycode::A => {
+                            cam.update_movement(CameraMovement::Left);
+                        }
+                        sdl2::keyboard::Keycode::D => {
+                            cam.update_movement(CameraMovement::Right);
+                        }
                         _ => {}
                     }
                 }
@@ -187,9 +195,7 @@ fn main() {
             }
         }
 
-        view = look_at(&camera_pos,
-					   &camera_front,
-                       &camera_up);
+        view = cam.look_at();
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
             gl::Clear(gl::DEPTH_BUFFER_BIT);

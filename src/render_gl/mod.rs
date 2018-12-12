@@ -1,12 +1,13 @@
-extern crate nalgebra_glm as glm;
 extern crate image;
 
 use std::ptr;
 use std::ffi::{CStr, CString};
+use glm::*;
 use gl;
 use gl::types::*;
 
 pub mod texture;
+pub mod camera;
 
 use render_gl::texture::Texture;
 pub struct Shader {
@@ -353,4 +354,9 @@ pub fn set_texture(filename: &String) -> GLuint {
     k
     
 
+}
+
+fn to_radians(degrees: f32) -> f32 {
+    let base: f32 = pi::<f32>()  / (180 as f32);
+    return base * degrees;
 }
