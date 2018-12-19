@@ -35,6 +35,10 @@ impl Camera {
        look_at(&self.position, &&(self.front + self.position), &self.up)
      }
 
+    pub fn position(&self) -> Vec3 {
+        self.position.clone()
+    }
+
     pub fn update_angle(&mut self, pitch_offset: f32, yaw_offset: f32) {
         self.pitch += pitch_offset;
         self.yaw   += yaw_offset;

@@ -133,6 +133,19 @@ impl Program {
         self.id
     }
 
+    pub fn location(&self, name: &str) -> Option<i32> {
+
+        let mut mat_name = CString::new(name).unwrap();
+        let mut mat_loc;
+        unsafe {
+            mat_loc = gl::GetUniformLocation(self.id(), mat_name.as_ptr() as *const i8);
+        }
+        if mat_loc == -1 {
+            None
+        } else {
+            Some(mat_loc)
+        }
+    }
     pub fn set_uniform_mat4(&self, mat_name: &str, mat: &glm::Mat4) -> Option<i32> {
         let mut mat_name = CString::new(mat_name).unwrap();
         let mut mat_loc;
@@ -148,6 +161,22 @@ impl Program {
             Some(mat_loc)
         }
 
+    }
+
+    pub fn set_uniform_1f(&self, name: &str, v: f32) -> Option<i32> {
+        let mut cname = CString::new(name).unwrap();
+        let mut loc;
+        unsafe {
+            loc = gl::GetUniformLocation(self.id(), cname.as_ptr() as *const i8);
+        }
+        if loc == -1 {
+            None
+        } else {
+            unsafe {
+                gl::Uniform1f(loc, v as gl::types::GLfloat);
+            }
+            Some(loc)
+        }
     }
 
     pub fn set_uniform_vec4(&self, vec_name: &str, vec: &glm::Vec4) -> Option<i32> {
@@ -236,6 +265,7 @@ impl Program {
                 let texture_location = gl::GetUniformLocation(
                     self.id(),
                     CString::new(tex_name.into_bytes()).unwrap().as_ptr());
+
                 gl::Uniform1i(texture_location, i as i32);
             }
 
