@@ -241,10 +241,10 @@ fn main() {
         let lightPos = make_vec3(&[4.0, 6.0, 3.0]);
         shader_program.set_uniform_vec3("viewPos", &cam.position());
 
-        shader_program.set_uniform_1f("material.shininess", 256.0);
+        shader_program.set_uniform_1f("material.shininess", 32.0);
         shader_program.set_uniform_vec3("light.position", &lightPos);
         shader_program.set_uniform_vec3("light.ambient", &make_vec3(&[0.2, 0.2, 0.2]));
-        shader_program.set_uniform_vec3("light.diffuse", &make_vec3(&[0.5, 0.7, 0.5]));
+        shader_program.set_uniform_vec3("light.diffuse", &make_vec3(&[0.5, 0.5, 0.5]));
         shader_program.set_uniform_vec3("light.specular", &make_vec3(&[1.0, 1.0, 1.0]));
 
 

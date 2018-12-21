@@ -9,7 +9,7 @@ use game::render_gl;
 
 use std::ptr;
 
-#[allow(unused_variables, non_snakecase)]
+#[allow(unused_variables, non_snake_case)]
 fn main() {
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();

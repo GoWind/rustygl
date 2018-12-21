@@ -106,7 +106,7 @@ fn main() {
 
     let cube_pos : Vec<Vec3> = vec![
         make_vec3(&[0.0, 0.0, 0.0]),
-        make_vec3(&[2.0, 5.0, -15.0]),
+        make_vec3(&[2.0, 5.0, -10.0]),
         make_vec3(&[-1.5, -2.2, -2.5]),
     ];
 
@@ -122,12 +122,12 @@ fn main() {
     let mut event_pump = sdl.event_pump().unwrap();
 
     shader_program.set_used();
-    let mut camera_pos = make_vec3(&[0.0, 0.0, 30.0]);
+    let mut camera_pos = make_vec3(&[0.0, 0.0, 15.0]);
     let mut camera_front = make_vec3(&[0.0, 0.0, -1.0]);
     let mut camera_up = make_vec3(&[0.0, 1.0, 0.0]);
-    let mut camera_speed = 0.5;
+    let mut camera_speed = 0.3;
     let mut last_time: f32 = timer.ticks() as f32;
-    let mut yaw = 0.0;
+    let mut yaw = 89.0;
     let mut pitch = 0.0;
 
     shader_program.set_textures();
@@ -156,6 +156,7 @@ fn main() {
                 }
                 sdl2::event::Event::KeyDown{keycode: k, ..} => {
                     let key_code = k.unwrap();
+                    println!("{}", camera_pos);
 
                     match key_code {
                         sdl2::keyboard::Keycode::W => { camera_pos += camera_speed * camera_front;}
@@ -196,7 +197,7 @@ fn main() {
             for i in 0..cube_pos.len() {
                 let mut new_model  = Mat4::identity();
                 new_model = translate(&new_model, &cube_pos[i]);
-                new_model = rotate(&new_model, timer.ticks() as f32 * to_radians(20.0), &make_vec3(&[1.0, 0.0, 0.0]));
+                new_model = rotate(&new_model, timer.ticks() as f32 * to_radians(20.0) * 0.5, &make_vec3(&[1.0, 0.0, 0.0]));
                 shader_program.set_uniform_mat4("model", &new_model).unwrap();
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }

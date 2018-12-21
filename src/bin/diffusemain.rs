@@ -9,7 +9,7 @@ use game::render_gl;
 use game::render_gl::camera::*;
 use std::ptr;
 
-#[allow(unused_variables, non_snakecase)]
+#[allow(unused_variables, non_snake_case)]
 fn main() {
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
@@ -203,15 +203,16 @@ fn main() {
         }
 
 
-		let lightPos = make_vec3(&[0.0, 5.0, 1.0]);
+		let lightPos = make_vec3(&[2.0, 5.0, 2.0]);
 		let lightColor = make_vec3(&[1.0, 1.0, 1.0]);
 		let objectColor = make_vec3(&[1.0, 0.5, 0.31]);
         shader_program.set_uniform_mat4("view", &view).unwrap();
         shader_program.set_uniform_mat4("perspective", &projection).unwrap();
         shader_program.set_uniform_mat4("model", &model).unwrap();
 
-		shader_program.set_uniform_vec3("lightPos",&lightPos); 
-		shader_program.set_uniform_vec3("objectColor", &objectColor); 
+		shader_program.set_uniform_vec3("lightPos",&lightPos);
+
+		shader_program.set_uniform_vec3("objectColor", &objectColor);
 		shader_program.set_uniform_vec3("lightColor",&lightColor); 
 		shader_program.set_uniform_vec3("viewPos",&camera_pos); 
 
@@ -224,9 +225,17 @@ fn main() {
 
         window.gl_swap_window();
 	}
+
+    let g = String::from("what the frag");
+    my_my(g.clone());
+    println!("{}", g);
 }
 fn to_radians(degrees: f32) -> f32 {
    let base: f32 = pi::<f32>()  / (180 as f32);
     return base * degrees;
 
+}
+
+fn my_my(x: String) {
+    println!("{}", x);
 }
