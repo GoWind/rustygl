@@ -4,7 +4,7 @@ extern crate gl;
 extern crate nalgebra_glm as glm;
 extern crate game;
 
-use glm::*;
+use crate::glm::*;
 use game::render_gl;
 use game::render_gl::camera::*;
 use std::ptr;
@@ -44,15 +44,15 @@ fn main() {
         &[vert_shader, frag_shader]
     ).unwrap();
 
-    let mut lamp_vert_shader = render_gl::Shader::from_vert_source(
+    let lamp_vert_shader = render_gl::Shader::from_vert_source(
         &CString::new(include_str!("lamp.vert")).unwrap()
     ).unwrap();
 
-    let mut lamp_frag_shader = render_gl::Shader::from_frag_source(
+    let lamp_frag_shader = render_gl::Shader::from_frag_source(
         &CString::new(include_str!("lamp.frag")).unwrap()
     ).unwrap();
 
-    let mut lamp_shader_program = render_gl::Program::from_shaders(
+    let lamp_shader_program = render_gl::Program::from_shaders(
         &[lamp_vert_shader, lamp_frag_shader]
     ).unwrap();
 

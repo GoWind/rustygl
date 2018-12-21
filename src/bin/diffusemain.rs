@@ -4,7 +4,7 @@ extern crate gl;
 extern crate nalgebra_glm as glm;
 extern crate game;
 
-use glm::*;
+use crate::glm::*;
 use game::render_gl;
 use game::render_gl::camera::*;
 use std::ptr;
@@ -13,7 +13,7 @@ use std::ptr;
 fn main() {
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
-    let mut timer = sdl.timer().unwrap();
+    let timer = sdl.timer().unwrap();
 
     let gl_attr = video_subsystem.gl_attr();
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
@@ -41,7 +41,7 @@ fn main() {
         &CString::new(include_str!("diffuse.frag")).unwrap()
     ).unwrap();
 
-    let mut shader_program = render_gl::Program::from_shaders(
+    let shader_program = render_gl::Program::from_shaders(
         &[vert_shader, frag_shader]
     ).unwrap();
 
@@ -160,9 +160,9 @@ fn main() {
     let mut event_pump = sdl.event_pump().unwrap();
 
     shader_program.set_used();
-	let mut camera_pos = make_vec3(&[0.0, 1.0, 5.0]);
-	let mut camera_up =  make_vec3(&[0.0, 1.0, 0.0]);
-	let mut camera_front =  make_vec3(&[0.0, 0.0, -1.0]);
+	let camera_pos = make_vec3(&[0.0, 1.0, 5.0]);
+	let camera_up =  make_vec3(&[0.0, 1.0, 0.0]);
+	let camera_front =  make_vec3(&[0.0, 0.0, -1.0]);
 	let camera_speed = 0.3;
 
     let mut cam = Camera::new(&camera_pos, &camera_front, &camera_up, 0.3);

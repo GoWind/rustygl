@@ -1,5 +1,5 @@
-use glm::*;
-use render_gl::to_radians;
+use crate::glm::*;
+use crate::render_gl::to_radians;
 
 pub struct Camera {
     position: Vec3,

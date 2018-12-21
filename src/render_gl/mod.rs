@@ -2,14 +2,14 @@ extern crate image;
 
 use std::ptr;
 use std::ffi::{CStr, CString};
-use glm::*;
+use crate::glm::*;
 use gl;
 use gl::types::*;
 
 pub mod texture;
 pub mod camera;
 
-use render_gl::texture::Texture;
+use crate::render_gl::texture::Texture;
 pub struct Shader {
 id: gl::types::GLuint
 }
@@ -135,8 +135,8 @@ impl Program {
 
     pub fn location(&self, name: &str) -> Option<i32> {
 
-        let mut mat_name = CString::new(name).unwrap();
-        let mut mat_loc;
+        let mat_name = CString::new(name).unwrap();
+        let mat_loc;
         unsafe {
             mat_loc = gl::GetUniformLocation(self.id(), mat_name.as_ptr() as *const i8);
         }
@@ -147,8 +147,8 @@ impl Program {
         }
     }
     pub fn set_uniform_mat4(&self, mat_name: &str, mat: &glm::Mat4) -> Option<i32> {
-        let mut mat_name = CString::new(mat_name).unwrap();
-        let mut mat_loc;
+        let mat_name = CString::new(mat_name).unwrap();
+        let mat_loc;
         unsafe {
             mat_loc = gl::GetUniformLocation(self.id(), mat_name.as_ptr() as *const i8);
         }
@@ -164,8 +164,8 @@ impl Program {
     }
 
     pub fn set_uniform_1f(&self, name: &str, v: f32) -> Option<i32> {
-        let mut cname = CString::new(name).unwrap();
-        let mut loc;
+        let cname = CString::new(name).unwrap();
+        let loc;
         unsafe {
             loc = gl::GetUniformLocation(self.id(), cname.as_ptr() as *const i8);
         }
@@ -181,8 +181,8 @@ impl Program {
 
     pub fn set_uniform_vec4(&self, vec_name: &str, vec: &glm::Vec4) -> Option<i32> {
 
-        let mut vec_name = CString::new(vec_name).unwrap();
-        let mut vec_loc;
+        let vec_name = CString::new(vec_name).unwrap();
+        let vec_loc;
         unsafe {
             vec_loc = gl::GetUniformLocation(self.id(), vec_name.as_ptr() as *const i8);
         }
@@ -199,8 +199,8 @@ impl Program {
 
     pub fn set_uniform_vec3(&self, vec_name: &str, vec: &glm::Vec3) -> Option<i32> {
 
-        let mut vec_name = CString::new(vec_name).unwrap();
-        let mut vec_loc;
+        let vec_name = CString::new(vec_name).unwrap();
+        let vec_loc;
         unsafe {
             vec_loc = gl::GetUniformLocation(self.id(), vec_name.as_ptr() as *const i8);
         }
@@ -291,11 +291,11 @@ impl Drop for Program {
 fn load_image(filename: &String) -> Result<(ImageType, Vec<u8>, u32, u32), String> {
     let k = image::open(filename).unwrap();
     match k  {
-        image::DynamicImage::ImageRgb8(ref im) => {
+        image::DynamicImage::ImageRgb8(ref _im) => {
             let data = k.as_rgb8().unwrap();
             return Ok((ImageType::RGB, data.clone().into_raw(), data.width(), data.height()));
         }
-        image::DynamicImage::ImageRgba8(ref im) => {
+        image::DynamicImage::ImageRgba8(ref _im) => {
             let data = k.as_rgba8().unwrap();
             Ok((ImageType::RGBA, data.clone().into_raw(), data.width(), data.height()))
         }

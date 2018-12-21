@@ -4,7 +4,7 @@ extern crate gl;
 extern crate nalgebra_glm as glm;
 extern crate game;
 
-use glm::*;
+use crate::glm::*;
 use game::render_gl;
 
 use std::ptr;
@@ -117,14 +117,14 @@ fn main() {
     shader_program.program_load_texture(&String::from("texture2"), &String::from("smiley.png"));
     let mut view = Mat4::identity();
     let mut projection = Mat4::identity();
-    let mut model = rotate(&Mat4::identity(), to_radians(-55.0), &make_vec3(&[1.0, 0.0, 0.0]));
+    let _model = rotate(&Mat4::identity(), to_radians(-55.0), &make_vec3(&[1.0, 0.0, 0.0]));
     projection = perspective(800.0/600.0 as f32, to_radians(45.0), 0.1, 100.0);
     let mut event_pump = sdl.event_pump().unwrap();
 
     shader_program.set_used();
     let mut camera_pos = make_vec3(&[0.0, 0.0, 15.0]);
     let mut camera_front = make_vec3(&[0.0, 0.0, -1.0]);
-    let mut camera_up = make_vec3(&[0.0, 1.0, 0.0]);
+    let camera_up = make_vec3(&[0.0, 1.0, 0.0]);
     let mut camera_speed = 0.3;
     let mut last_time: f32 = timer.ticks() as f32;
     let mut yaw = 89.0;
@@ -174,7 +174,7 @@ fn main() {
         }
         camera_front = make_vec3(&[
             to_radians(pitch).cos() * to_radians(yaw).cos(),
-            (to_radians((pitch)).sin()),
+            (to_radians(pitch).sin()),
             (to_radians(pitch)).cos() * (to_radians(yaw)).sin()]);
 
         view = look_at(&camera_pos,
@@ -187,7 +187,7 @@ fn main() {
         }
 
 
-        let radius = 10.0;
+        let _radius = 10.0;
         shader_program.set_uniform_mat4("view", &view).unwrap();
         shader_program.set_uniform_mat4("perspective", &projection).unwrap();
 
