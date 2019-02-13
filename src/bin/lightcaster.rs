@@ -4,7 +4,6 @@ extern crate gl;
 extern crate nalgebra_glm as glm;
 extern crate game;
 
-use rand::prelude::*;
 use crate::glm::*;
 use game::render_gl;
 use game::render_gl::camera::*;
@@ -215,6 +214,10 @@ fn main() {
 
     let mut cam = Camera::new(&camera_pos, &camera_front, &camera_up, 0.3);
     shader_program.set_textures();
+    
+    let mut angle  = 0.0;
+    let radius = 6.0;
+
     let mut lightPos = make_vec3(&[0.0, 1.0, 6.0]);
 
     'main: loop {
@@ -249,6 +252,9 @@ fn main() {
                 _ => {},
             }
         }
+        lightPos.x = radius * to_radians(angle).cos();
+        lightPos.z = radius * to_radians(angle).sin();
+        
 
         view = cam.look_at();
         unsafe {
@@ -298,6 +304,7 @@ fn main() {
             gl::BindVertexArray(0);
         }
         window.gl_swap_window();
+        angle += 0.3;
     }
 }
 fn to_radians(degrees: f32) -> f32 {
