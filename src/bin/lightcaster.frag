@@ -36,6 +36,8 @@ void main()
     //light.direction points from light to Frag
     //-light.direction points from Fragment to Light
     float theta = dot(lightDir, normalize(-light.direction));
+    float distance = length(light.position - FragPos);
+    float attenuation = 1.0/ (light.constant + light.linear * distance + light.quadratic * (distance * distance));
     if (theta > 0.98) {
 	    vec3 ambient = light.ambient * texture(material.diffuse, TexCoords).rgb;
 	    vec3 norm = normalize(Normal);
@@ -51,9 +53,6 @@ void main()
 
 	    vec3 diffuse = light.diffuse * diff * texture(material.diffuse, TexCoords).rgb;
 
-	    float distance = length(light.position - FragPos);
-	    float attenuation = 1.0/ (light.constant + light.linear * distance +
-			    light.quadratic * (distance * distance));
 
 	    ambient *= attenuation;
 	    diffuse *= attenuation;
@@ -61,7 +60,9 @@ void main()
 	    result = ambient + diffuse + specular;
 	    FragColor = vec4(result, 1.0);
     } else {
-    	FragColor = vec4(light.ambient * texture(material.diffuse, TexCoords).rgb ,1.0);
+    	vec3 ambient = light.ambient * texture(material.diffuse, TexCoords).rgb;
+    	ambient *= attenuation;
+	FragColor = vec4(ambient, 1.0);
     }
     
 }
