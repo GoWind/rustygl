@@ -1,4 +1,3 @@
-
 extern crate sdl2;
 extern crate gl;
 extern crate nalgebra_glm as glm;
@@ -33,11 +32,11 @@ fn main() {
 
     use std::ffi::{CString};
     let vert_shader = render_gl::Shader::from_vert_source(
-        &CString::new(include_str!("lightingmap.vert")).unwrap()
+        &CString::new(include_str!("lightcaster.vert")).unwrap()
     ).unwrap();
 
     let frag_shader = render_gl::Shader::from_frag_source(
-        &CString::new(include_str!("lightingmap.frag")).unwrap()
+        &CString::new(include_str!("lightcaster.frag")).unwrap()
     ).unwrap();
 
     let mut shader_program = render_gl::Program::from_shaders(
@@ -105,10 +104,19 @@ fn main() {
         -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  0.0,  0.0,
         -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0,  1.0];
 
+    let floor_rect = vec![1.0, 1.0, 0.0, 1.0, 1.0,
+                          1.0, -1.0, 0.0, 1.0, 0.0,
+                          -1.0, -1.0, 0.0, 0.0, 0.0,
+                          -1.0, 1.0, 0.0, 0.0, 1.0];
+    let floor_indices = vec![0, 1, 3, 1, 2, 3]; 
+                          
     let mut vbo2: gl::types::GLuint = 0;
     let mut vao2: gl::types::GLuint = 0;
     let mut ebo:  gl::types::GLuint = 0;
     let mut lamp_vao: gl::types::GLuint = 0;
+
+    let mut floor_vbo: gl::types::GLuint = 0;
+    let mut floor_indices: gl::types::GLuint = 0;
     unsafe {
         gl::GenVertexArrays(1, &mut vao2);
         gl::GenVertexArrays(1, &mut lamp_vao);
@@ -121,7 +129,7 @@ fn main() {
 
     unsafe {
         gl::Viewport(0, 0, 800, 600);
-        gl::ClearColor(0.0, 0.0, 0.0, 0.0);
+        gl::ClearColor(0.0, 0.0, 1.0, 0.0);
     }
 
     unsafe {
@@ -216,10 +224,10 @@ fn main() {
     shader_program.set_textures();
     
     let mut angle  = 0.0;
-    let radius = 6.0;
+    let radius = 10.0;
 
-    let mut lightPos = make_vec3(&[0.0, 1.0, 6.0]);
-
+    let mut lightPos = make_vec3(&[0.0, 1.0, 10.0]);
+    println!("{}", to_radians(10.0).cos());
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -266,13 +274,15 @@ fn main() {
         shader_program.set_uniform_vec3("viewPos", &cam.position());
 
         shader_program.set_uniform_1f("material.shininess", 32.0);
-        shader_program.set_uniform_vec3("light.position", &lightPos);
-        shader_program.set_uniform_vec3("light.ambient", &make_vec3(&[0.2, 0.2, 0.2]));
-        shader_program.set_uniform_vec3("light.diffuse", &make_vec3(&[0.5, 0.5, 0.5]));
+        shader_program.set_uniform_1f("light.cutoff", 0.80); 
+        shader_program.set_uniform_vec3("light.position", &cam.position());
+        shader_program.set_uniform_vec3("light.direction", &cam.front());
+        shader_program.set_uniform_vec3("light.ambient", &make_vec3(&[0.3, 0.3, 0.3]));
+        shader_program.set_uniform_vec3("light.diffuse", &make_vec3(&[0.8, 0.8, 0.8]));
         shader_program.set_uniform_vec3("light.specular", &make_vec3(&[1.0, 1.0, 1.0]));
         shader_program.set_uniform_1f("light.constant", 1.0);
-        shader_program.set_uniform_1f("light.linear", 0.00);
-        shader_program.set_uniform_1f("light.quadratic", 0.000);
+        shader_program.set_uniform_1f("light.linear", 0.09);
+        shader_program.set_uniform_1f("light.quadratic", 0.032);
 
 
         shader_program.set_uniform_mat4("view", &view).unwrap();
@@ -289,6 +299,7 @@ fn main() {
         }
         }
 
+        /*
         lamp_shader_program.set_used();
         let mut lamp_model = Mat4::identity();
         lamp_model = scale(&lamp_model, &make_vec3(&[0.3, 0.3, 0.3]));
@@ -303,8 +314,9 @@ fn main() {
             gl::DrawArrays(gl::TRIANGLES, 0, 36);
             gl::BindVertexArray(0);
         }
+        */
         window.gl_swap_window();
-        angle += 0.3;
+        angle += 0.0;
     }
 }
 fn to_radians(degrees: f32) -> f32 {
