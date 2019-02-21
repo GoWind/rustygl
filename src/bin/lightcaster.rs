@@ -129,7 +129,7 @@ fn main() {
 
     unsafe {
         gl::Viewport(0, 0, 800, 600);
-        gl::ClearColor(0.0, 0.0, 1.0, 0.0);
+        gl::ClearColor(0.0, 0.0, 0.0, 0.0);
     }
 
     unsafe {
@@ -227,7 +227,6 @@ fn main() {
     let radius = 10.0;
 
     let mut lightPos = make_vec3(&[0.0, 1.0, 10.0]);
-    println!("{}", to_radians(10.0).cos());
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -274,11 +273,12 @@ fn main() {
         shader_program.set_uniform_vec3("viewPos", &cam.position());
 
         shader_program.set_uniform_1f("material.shininess", 32.0);
-        shader_program.set_uniform_1f("light.cutoff", 0.80); 
+        shader_program.set_uniform_1f("light.innerCutoff", to_radians(12.5).cos()); 
+        shader_program.set_uniform_1f("light.outerCutoff", to_radians(17.5).cos()); 
         shader_program.set_uniform_vec3("light.position", &cam.position());
         shader_program.set_uniform_vec3("light.direction", &cam.front());
-        shader_program.set_uniform_vec3("light.ambient", &make_vec3(&[0.3, 0.3, 0.3]));
-        shader_program.set_uniform_vec3("light.diffuse", &make_vec3(&[0.8, 0.8, 0.8]));
+        shader_program.set_uniform_vec3("light.ambient", &make_vec3(&[0.4, 0.4, 0.4]));
+        shader_program.set_uniform_vec3("light.diffuse", &make_vec3(&[1.0, 1.0, 1.0]));
         shader_program.set_uniform_vec3("light.specular", &make_vec3(&[1.0, 1.0, 1.0]));
         shader_program.set_uniform_1f("light.constant", 1.0);
         shader_program.set_uniform_1f("light.linear", 0.09);
@@ -293,6 +293,7 @@ fn main() {
         g = translate(&g, cube_pos);
         shader_program.set_uniform_mat4("model", &g).unwrap();
         unsafe {
+            
             gl::BindVertexArray(vao2);
             gl::DrawArrays(gl::TRIANGLES, 0, 36);
             gl::BindVertexArray(0);
