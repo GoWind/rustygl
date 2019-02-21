@@ -38,7 +38,7 @@ void main()
     float theta = dot(lightDir, normalize(-light.direction));
     float distance = length(light.position - FragPos);
     float attenuation = 1.0/ (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-    if (theta > 0.98) {
+    if (theta > light.cutoff) {
 	    vec3 ambient = light.ambient * texture(material.diffuse, TexCoords).rgb;
 	    vec3 norm = normalize(Normal);
 	    vec3 result = vec3(0.0, 0.0, 0.0);
