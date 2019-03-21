@@ -8,6 +8,7 @@ use gl::types::*;
 
 pub mod texture;
 pub mod camera;
+pub mod sphere;
 
 use crate::render_gl::texture::Texture;
 pub struct Shader {
