@@ -53,7 +53,7 @@ fn main() {
 
 
     let (vertices, indices): (Vec<f32>, Vec<u32>)
-        = sphere::generate_sphere(18, 36, 5.0, true);
+        = sphere::generate_sphere(50, 60, 5.0, true);
 
     let vertices2 = vertices.clone();
 
@@ -182,8 +182,8 @@ fn main() {
         shader_program.set_uniform_1f("material.shininess", 32.0);
         shader_program.set_uniform_vec3("light.position", &cam.position());
         shader_program.set_uniform_vec3("light.direction", &cam.front());
-        shader_program.set_uniform_vec3("light.ambient", &make_vec3(&[0.6, 0.6, 0.6]));
-        shader_program.set_uniform_vec3("light.diffuse", &make_vec3(&[0.8, 0.8, 0.8]));
+        shader_program.set_uniform_vec3("light.ambient", &make_vec3(&[0.2, 0.2, 0.1]));
+        shader_program.set_uniform_vec3("light.diffuse", &make_vec3(&[0.3, 0.4, 0.3]));
         shader_program.set_uniform_vec3("light.specular", &make_vec3(&[1.0, 1.0, 1.0]));
 
 
